@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ClassSchedule {
     
@@ -36,116 +38,113 @@ public class ClassSchedule {
     private final String SUBJECTID_COL_HEADER = "subjectid";
     
     public String convertCsvToJsonString(List<String[]> csv) {
-        // Iterate through CSV
-        Iterator<String[]> iterator = csv.iterator();
         
-        // Declaring main topics in json and intializing hashmaps
-        LinkedHashMap<String, String> jsonSchedules = new LinkedHashMap<>();
-        LinkedHashMap<String, String> jsonSubjects = new LinkedHashMap<>();
-        LinkedHashMap<String, LinkedHashMap<String, Object>> jsonCourses = new LinkedHashMap<>();
-        
-        // Arraylist for the Schedules, Subjects, and Courses
-        ArrayList<String> scheduleArrayCount = new ArrayList<>();
-        ArrayList<String> subjectArrayCount = new ArrayList<>();
-        ArrayList<String> courseArrayCount = new ArrayList<>();
-        
-        ArrayList<String> crnArrayCount = new ArrayList<>();
-        JsonArray sectionArray = new JsonArray();
-        
-        if (iterator.hasNext()){
-            String[] headings = iterator.next(); //extract column headers
-            while (iterator.hasNext()){
-                String[] csvRecord = iterator.next(); //extract from each row
-                
-                // Extracting needed information from CSV
-                String recType = csvRecord[5];
-                String recHow = csvRecord[11];
-                String recAbbv = csvRecord[2].substring(0,3).replaceAll("\\s", "");
-                String recName = csvRecord[1];
-                String recNum = csvRecord[2].substring(csvRecord[2].length()- 3);
-                String recDesc = csvRecord[3];
-                int recCredits = Integer.parseInt(csvRecord[6]);
-                int recCrnInt = Integer.parseInt(csvRecord[0]);
-                String recCrn = csvRecord[0];
-                String recSect = csvRecord[4];
-                String recStart = csvRecord[7];
-                String recEnd = csvRecord[8];
-                String recDays = csvRecord[9];
-                String recWhere = csvRecord[10];
-                String recNameAndNum = csvRecord[2];
-                
-                // intrusctors
-                String[] recInstructors = csvRecord[12].split(",");
-                ArrayList<String> instructors = new ArrayList<>();
-                for (String instructor : recInstructors){
-                    instructors.add(instructor.trim());
+        Iterator<String[]> csvIterator = csv.iterator(); // Iterating through CSV
+
+    LinkedHashMap<String, String> scheduleTypes = new LinkedHashMap<>(); // HashMap of acronym (type) to full name (where)
+    LinkedHashMap<String, String> subjectNames = new LinkedHashMap<>();
+    LinkedHashMap<String, HashMap> courseDetails = new LinkedHashMap<>();
+
+    ArrayList<String> scheduleTypeList = new ArrayList<>(); // Creating an ArrayList to store types of schedule types
+    ArrayList<String> subjectList = new ArrayList<>();
+    ArrayList<String> courseList = new ArrayList<>();
+    ArrayList<String> crnList = new ArrayList<>();
+    ArrayList<HashMap> sectionDetailsList = new ArrayList<>();
+
+    if (csvIterator.hasNext()) {
+        String[] headings = csvIterator.next();
+        while (csvIterator.hasNext()) {
+            String[] csvRecord = csvIterator.next();
+
+            String classType = csvRecord[5]; // CSV record for the type of class abbreviated (online = ONL etc)
+            String deliveryMethod = csvRecord[11]; // CSV record for how the class is run (online vs in-person etc)
+
+            String subjectAbbreviation = csvRecord[2].substring(0, 3).replaceAll("\\s", ""); // CSV record for the Subject Description
+            String subjectName = csvRecord[1]; // CSV record for the SubjectName
+
+            String courseNumber = csvRecord[2].substring(csvRecord[2].length() - 3);
+            String courseDescription = csvRecord[3];
+            String fullSubjectName = csvRecord[2];
+            int creditHours = Integer.parseInt(csvRecord[6]);
+
+            int crnInt = Integer.parseInt(csvRecord[0]);
+            String crnString = csvRecord[0];                
+            String section = csvRecord[4];
+            String startTime = csvRecord[7];
+            String endTime = csvRecord[8];
+            String classDays = csvRecord[9];
+            String location = csvRecord[10];
+            String[] instructorArray = csvRecord[12].split(",");
+            ArrayList<String> instructorList = new ArrayList<>();
+
+            for (String instructor : instructorArray) {
+                instructorList.add(instructor.replaceAll("^\\s+", "").replaceAll("\\s+$", ""));
+            }
+
+            for (int i = 0; i < headings.length; ++i) {
+                if (scheduleTypeList.contains(classType)) { // Checking to see if it's already in our list
+                    assert true; // Skipping if already in our array
+                } else {
+                    scheduleTypeList.add(csvRecord[5]); // Adding to ArrayList to be skipped in future
+                    scheduleTypes.put(classType, deliveryMethod); // Adding TYPE and WHERE to HashMap
                 }
-                
-                // add schedule type if needed
-                if(!scheduleArrayCount.contains(recType)){
-                    scheduleArrayCount.add(recType);
-                    jsonSchedules.put(recType, recHow);
+
+                if (subjectList.contains(courseDescription)) { // Checking to see if it's already in our list
+                    assert true; // Skipping if already in our array
+                } else {
+                    subjectList.add(courseDescription); // Adding to ArrayList to be skipped in future
+                    subjectNames.put(subjectAbbreviation, subjectName); // Adding TYPE and WHERE to HashMap
                 }
-                
-                // add subject if needed
-                if(!subjectArrayCount.contains(recDesc)){
-                    subjectArrayCount.add(recDesc);
-                    jsonSubjects.put(recAbbv, recName);
+
+                if (courseList.contains(fullSubjectName)) { // Checking to see if it's already in our list
+                    assert true; // Skipping if already in our array
+                } else {
+                    courseList.add(csvRecord[2]); // Adding to ArrayList to be skipped in future
+                    LinkedHashMap<String, Object> courseInfo = new LinkedHashMap<>();
+                    courseInfo.put(SUBJECTID_COL_HEADER, subjectAbbreviation);
+                    courseInfo.put(NUM_COL_HEADER, courseNumber);
+                    courseInfo.put(DESCRIPTION_COL_HEADER, courseDescription);
+                    courseInfo.put(CREDITS_COL_HEADER, creditHours);
+                    courseDetails.put(fullSubjectName, courseInfo);
                 }
-                
-                // add course detail if needed
-                if (!courseArrayCount.contains(recNameAndNum)){
-                    courseArrayCount.add(recNameAndNum);
-                    
-                    LinkedHashMap<String, Object> jsonCourseDetails = new LinkedHashMap<>();
-                    jsonCourseDetails.put("subjectId", recAbbv);
-                    jsonCourseDetails.put("courseNum", recNum);
-                    jsonCourseDetails.put("description", recDesc);
-                    jsonCourseDetails.put("credits", recCredits);
-                    
-                    jsonCourses.put(recNameAndNum, jsonCourseDetails);
+
+                if (crnList.contains(crnString)) { // Checking to see if it's already in our list
+                    assert true; // Skipping if already in our array
+                } else {
+                    crnList.add(crnString); // Adding to ArrayList to be skipped in future
+                    LinkedHashMap<String, Object> sectionInfo = new LinkedHashMap<>();
+                    sectionInfo.put(CRN_COL_HEADER, crnInt);
+                    sectionInfo.put(SUBJECTID_COL_HEADER, subjectAbbreviation);
+                    sectionInfo.put(NUM_COL_HEADER, courseNumber);
+                    sectionInfo.put(SECTION_COL_HEADER, section);
+                    sectionInfo.put(TYPE_COL_HEADER, classType);
+                    sectionInfo.put(START_COL_HEADER, startTime);
+                    sectionInfo.put(END_COL_HEADER, endTime);
+                    sectionInfo.put(DAYS_COL_HEADER, classDays);
+                    sectionInfo.put(WHERE_COL_HEADER, location);
+                    sectionInfo.put(INSTRUCTOR_COL_HEADER, instructorList);
+
+                    sectionDetailsList.add(sectionInfo);
                 }
-                
-                //Add section details if needed
-                if(!crnArrayCount.contains(recCrn)){
-                    crnArrayCount.add(recCrn);
-                    
-                    LinkedHashMap<String, Object> jsonSectionDetails = new LinkedHashMap<>();
-                    jsonSectionDetails.put("crn", recCrnInt);
-                    jsonSectionDetails.put("subjectID", recAbbv);
-                    jsonSectionDetails.put("courseNum", recNum);
-                    jsonSectionDetails.put("section", recSect);
-                    jsonSectionDetails.put("type", recType);
-                    jsonSectionDetails.put("startTime", recStart);
-                    jsonSectionDetails.put("endTime", recEnd);
-                    jsonSectionDetails.put("days", recDays);
-                    jsonSectionDetails.put("location", recWhere);
-                    jsonSectionDetails.put("instructors", instructors);
-                    
-                    sectionArray.add(jsonSectionDetails);
-                    
-                }
-                        
-                
             }
         }
-        
-        // Creating JSON object
-        JsonObject mainRecord = new JsonObject();
-        mainRecord.put("scheduleType", jsonSchedules);
-        mainRecord.put("subjects", jsonSubjects);
-        mainRecord.put("courses", jsonCourses);
-        mainRecord.put("sections", sectionArray);
-        
-        // Serialize JSON to a string and print
-        String jsonString = Jsoner.serialize(mainRecord);
-        System.out.println(jsonString);
-        
-        return jsonString;
-        
-        
-        
     }
+
+    JsonObject mainRecord = new JsonObject();
+    mainRecord.put("scheduletype", scheduleTypes);
+    mainRecord.put(SUBJECT_COL_HEADER, subjectNames);
+    mainRecord.put("course", courseDetails);
+    mainRecord.put("section", sectionDetailsList);
+
+    String jsonString = Jsoner.serialize(mainRecord);
+
+    // Print final JSON string after all data is added
+    // System.out.println(jsonString);
+
+    return jsonString;
+
+}
+
     
     public String convertJsonToCsvString(JsonObject json) {
         

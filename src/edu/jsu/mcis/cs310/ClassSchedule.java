@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 public class ClassSchedule {
     
@@ -33,14 +34,31 @@ public class ClassSchedule {
     private final String SUBJECTID_COL_HEADER = "subjectid";
     
     public String convertCsvToJsonString(List<String[]> csv) {
+        // Iterate through CSV
+        Iterator<String[]> iterator = csv.iterator();
         
-        return ""; // remove this!
+        // Declaring main topics in json and intializing hashmaps
+        LinkedHashMap<String, String> jsonSchedules = new LinkedHashMap<>();
+        LinkedHashMap<String, String> jsonSubjects = new LinkedHashMap<>();
+        LinkedHashMap<String, HashMap> jsonCourses = new LinkedHashMap<>();
+        
+        // Arraylist for the Schedules, Subjects, and Courses
+        ArrayList<String> scheduleArrayCount = new ArrayList<>();
+        ArrayList<String> subjectArrayCount = new ArrayList<>();
+        ArrayList<String> courseArrayCount = new ArrayList<>();
+        
+        ArrayList<String> crnArrayCount = new ArrayList<>();
+        ArrayList<String> sectionArrayHashMaps = new ArrayList<>();
+        
+        
+        
+        
         
     }
     
     public String convertJsonToCsvString(JsonObject json) {
         
-        return ""; // remove this!
+        
         
     }
     
